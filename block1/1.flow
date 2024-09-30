@@ -1,0 +1,46 @@
+import string;
+import ds/tree;
+import ds/array;
+
+inds1(a: [int], m: int) -> [Pair<int, int>] {
+    foldi( a, [], \i, acc1, x -> { //acc1 and acc2 are intermadiary arrays containing pairs
+            foldi( a, acc1, \j, acc2, y -> {
+                    if (i >= j && x + y == m) {
+                        arrayPush(acc2, Pair(i, j));
+                    } else {
+                        acc2;
+                    }
+                }
+            )
+        }
+    );
+}
+
+inds2(a: [int], m: int) -> [Pair<int, int>] {
+    tree: Tree<int, [int]> = foldi( a, makeTree(), \i, acc, e -> { //acc is a tree
+            treePushToArrayValue(acc, e, i);
+        } //this creates a tree of arrays of length one with indeciescdcdcd
+          //where the keys are values at the index of the key!
+    );
+    
+    foldi( a, [], \i, acc1, a_i -> { // in acc1 we hold the pairs
+        fold(getTreeArrayValue(tree,  m - a_i), acc1, \acc2, indexOfa_i -> {
+                    if (i >= indexOfa_i) { // making sure we dont get duplicates
+                        arrayPush(acc2, Pair(i, indexOfa_i));
+                    } else {
+                        acc2;
+                    }
+                }    
+            );
+        }
+
+    );
+}
+
+main() {
+    m : int = 8;
+    a : [int] = [1, 2, 3, 9, 3, 0, 2, 12, 4, 8, 7, 6];
+    println(inds1(a, m));
+    println(inds2(a, m));
+    quit(0);
+}

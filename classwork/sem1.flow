@@ -1,0 +1,79 @@
+import string;
+
+arr2s(arr : [int]) -> string
+{
+    strGlue(map(arr, i2s), ",")
+}
+
+arraySum(arr : [int]) -> int
+{
+    fold(arr, 0, \acc,x -> acc + x);
+}
+
+// fibbonacci
+// 1) recursion
+// 2) tail recursion
+// 3) with ref to array
+
+fib1(n : int) -> [int]
+{
+    if (n == 0) {
+        [0];
+    } else if (n == 1) {
+        [0, 1];
+    } else {
+        // l = length(arr);
+        // replace(arr, l, arr[l-1] + arr[l-2])
+
+        arr = fib1(n-1);
+        concat(arr, [arr[n-1] + arr[n-2]])
+    }
+    
+}
+
+// tail recursion
+fib2_tail(n : int, acc : [int]) -> [int] {
+    if (n <= 2) {
+        acc
+    } else {
+        fib2_tail(n - 1, concat(acc, [acc[length(acc) - 1] + acc[length(acc) - 2]]));
+    }
+}
+
+// fib2(n : int) -> [int]
+//{
+    // ...
+// }
+
+fib3_tail(n : int, acc : ref [int]) -> [int] {
+    if (n <= 2) {
+        ^acc
+    } else {
+        fib3_tail(n - 1, {
+                refArrayPush(acc, ^acc[length(^acc) - 1] + ^acc[length(^acc) - 2]);
+                acc
+            })
+    }
+}
+
+fib3(n : int) -> [int] {
+    fib3_tail(n, ref [0, 1])
+}
+
+main() {
+    arr : [int] = [1, 2, 3];
+    println("arr: " + arr2s(arr));
+    println("sum: " + i2s(arraySum(arr)));
+    println("fib: " + arr2s(fib3(15)));
+}
+
+
+// дан массив и число m, найти все пары индексов, которые в сумме дают m
+// сначала полный перебор, потом O(log n)
+
+// given an array and a number m, find all pairs of indices that sum to m. create an algorithm that checks every possible Pair.
+
+
+// inds(arr : [int], m : int) -> [Pair<int, int>] {
+
+// }
