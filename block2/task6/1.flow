@@ -32,13 +32,72 @@ s2ar(str : string) -> ArExpr {
     );
 }
 
+myRPN ::= sumRPN, multRPN, valRPN;
+    
+sumRPN : ();
+multRPN : (); 
+valRPN : (val : int);
+
+expr2rpn(ex: ArExpr) -> [myRPN] {
+    switch (ex) {
+		ArMult(a, b) : concat(concat(expr2rpn(a), expr2rpn(b)), [multRPN()]);
+		ArSum(a, b) : concat(concat(expr2rpn(a), expr2rpn(b)), [sumRPN()]);
+        ArInt(a)    : [valRPN(a)];
+	}
+}
+
+rpn2s(ex : [myRPN]) -> string {
+    fold(ex, "", \acc, r -> {
+        switch(r) {
+            sumRPN() : acc + "+ ";
+            multRPN() : acc + "* ";
+            valRPN(a) : acc + i2s(a) + " ";
+        }
+    });
+}
+
+calculateRPN(rpn : [myRPN]) -> int {
+    lst = fold(rpn, makeList(), \acc, f -> {
+        switch(f) {
+            multRPN() : 
+            {
+                l = headList(acc, 0);
+                acc2 = tailList(acc);
+                r = headList(acc2, 0);
+                acc3 = tailList(acc2);
+                Cons(l * r, acc3);
+            }
+            sumRPN() : 
+            {
+                l = headList(acc, 0);
+                acc2 = tailList(acc);
+                r = headList(acc2, 0);
+                acc3 = tailList(acc2);
+                Cons(l + r, acc3);
+            }
+            valRPN(a) : 
+            {
+                Cons(a, acc);
+            }
+        }
+    });
+    
+    headList(lst, 0);
+}
+
 main() {
     str = "((12 * 10) + (3+4))";
+    println("entry: " + str);
 
     ex = s2ar(str);
     println(ex);
 
-    println("parsed AST: " + ar2s(ex));
+    rpnFormat = expr2rpn(ex);
+    println(rpnFormat);
+    println(rpn2s(rpnFormat));
 
-    println("result: " + i2s(ar2i(ex)));
+    // println("parsed AST: " + ar2s(ex));
+
+    // println("result: " + i2s(ar2i(ex)));
+    println("rpnResult: " + i2s(calculateRPN(rpnFormat)));
 }
