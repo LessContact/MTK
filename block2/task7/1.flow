@@ -21,6 +21,7 @@ sumRatNum(lhs : Maybe<ratNum>, rhs : Maybe<ratNum>) -> Maybe<ratNum> { // a/b + 
         val2 = either(rhs, ratNum(0, 0));
 
         nok = lcm(val1.denominator, val2.denominator);
+        // приведение к общему знаменателю
         newNumerator = nok / val1.denominator * val1.numerator + nok / val2.denominator * val2.numerator;
         newDenominator = nok;
 
@@ -38,6 +39,7 @@ subRatNum(lhs : Maybe<ratNum>, rhs : Maybe<ratNum>) -> Maybe<ratNum> { // a/b  -
         val2 = either(rhs, ratNum(0, 0));
 
         nok = lcm(val1.denominator, val2.denominator);
+        // приведение к общему знаменателю
         newNumerator = nok / val1.denominator * val1.numerator - nok / val2.denominator * val2.numerator;
         newDenominator = nok;
 
@@ -136,10 +138,10 @@ parser(str : string) -> ArExpr {
 }
 
 main() {
-    str = "(-((45 * 48) / (9 * 4)) * xna)"; // -27,2727272727 == -300/11
+    str = "(-((45 * 48) / (9 * 4)) * xna1)"; // -27,2727272727 == -300/11
     // str = "((1/2000000000)+(1/2000000000))"; // маленькие числа
-    
-    vars = setTreeValues(makeTree(), [Pair("xna", ratNum(5, 11))]);
+
+    vars = setTreeValues(makeTree(), [Pair("xna1", ratNum(5, 11))]);
     ex = parser(str);
 
     println(ex);
