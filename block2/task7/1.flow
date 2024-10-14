@@ -138,10 +138,10 @@ parser(str : string) -> ArExpr {
 }
 
 main() {
-    str = "(-((45 * 48) / (9 * 4)) * xna1)"; // -27,2727272727 == -300/11
-    str1 = "((1/2000000000)+(1/2000000000))"; // маленькие числа
-
     vars = setTreeValues(makeTree(), [Pair("xna1", ratNum(5, 11))]);
+
+    str = "(-((45 * 48) / (9 * 4)) * xna1)"; // -27,2727272727 == -300/11
+
     ex = parser(str);
 
     println(ex);
@@ -151,6 +151,8 @@ main() {
     println("result: " + ratNum2s(calculate(ex, vars)));
 
     println("\n");
+    
+    str1 = "((1/2000000000)+(1/2000000000))"; // маленькие числа
     
     ex1 = parser(str1);
 
