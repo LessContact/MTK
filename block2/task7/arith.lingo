@@ -6,7 +6,8 @@ digit = '0' - '9';
 ws = (' ' | '\t' | '\n' | '\r')*;
 
 int = digit+ $s { ArInt( s2i($s)) };
-var = (letter+ digit*) $s { ArVar( $s ) };
+alphanum = 'a' - 'z' | 'A' - 'Z' | '0' - '9';
+var = (letter+ alphanum*) $s { ArVar( $s ) };
 
 sum = "(" ws S:l ws "+" ws S:r ws ")" { ArSum(:l, :r) }; 
 mul = "(" ws S:l ws "*" ws S:r ws ")" { ArMult(:l, :r) };

@@ -91,17 +91,17 @@ divRatNum(lhs : Maybe<ratNum>, rhs : Maybe<ratNum>) -> Maybe<ratNum> { // a/b / 
 }
 
 ratNum2s(rat : Maybe<ratNum>) -> string {
-    if (isSome(rat)) {
         newRat = either(rat, ratNum(0, 0));
         if (newRat.denominator == 0) 
             "ERROR (Division by zero)"
         else if (newRat.denominator == 1)
             i2s(newRat.numerator)
+        else if (newRat.denominator < 0){
+            newRat1 = (ratNum(-newRat.numerator, -newRat.denominator));
+            i2s(newRat1.numerator) + "/" + i2s(newRat1.denominator);
+        }
         else
             i2s(newRat.numerator) + "/" + i2s(newRat.denominator);
-    } else {
-        "------its joever------";
-    }
 }
 
 calculate(e: ArExpr, vars : Tree<string, ratNum>) -> Maybe<ratNum> {
@@ -138,27 +138,29 @@ parser(str : string) -> ArExpr {
 }
 
 main() {
-    vars = setTreeValues(makeTree(), [Pair("xna1", ratNum(5, 11))]);
+    vars = setTreeValues(makeTree(), [Pair("xna1n", ratNum(15, 3))]);
 
-    str = "(-((45 * 48) / (9 * 4)) * xna1)"; // -27,2727272727 == -300/11
-
+    // str = "(-((45 * 48) / (9 * 4)) * xna1n)"; // -27,2727272727 == -300/11
+    str = "(2/(3-xna1n))";
     ex = parser(str);
 
     println(ex);
 
     println("parsed AST: " + ar2s(ex));
 
+    println(calculate(ex, vars));
+
     println("result: " + ratNum2s(calculate(ex, vars)));
 
-    println("\n");
+//     println("\n");
+
+//     str1 = "((1/2000000000)+(1/2000000000))"; // маленькие числа
     
-    str1 = "((1/2000000000)+(1/2000000000))"; // маленькие числа
-    
-    ex1 = parser(str1);
+//     ex1 = parser(str1);
 
-    println(ex1);
+//     println(ex1);
 
-    println("parsed AST: " + ar2s(ex1));
+//     println("parsed AST: " + ar2s(ex1));
 
-    println("result: " + ratNum2s(calculate(ex1, vars)));
+//     println("result: " + ratNum2s(calculate(ex1, vars)));
 }
