@@ -33,7 +33,7 @@ s2ar(str : string) -> ArExpr {
 }
 
 main() {
-    str = "((12 * 10) + (3+4))";
+    str = "((12 * 10)+(3+4))";
 
     ex = s2ar(str);
     println(ex);
