@@ -1,0 +1,11 @@
+Flow compiler (3rd generation)
+
+Current dir: C:/Users/korol/flow9/labs
+Config dir: 
+Flow path: C:/Users/korol/flow9/flow9/
+Flow library path: C:/Users/korol/flow9/flow9/lib
+Flow includes paths: ["C:/Users/korol/flow9/flow9/lib", "C:/Users/korol/flow9/flow9/lib/material", "C:/Users/korol/flow9/innovation/lib", "C:/Users/korol/flow9/flow9/", "C:/Users/korol/flow9/innovation", "."]
+Only expected one file, not: I & Int &  & cast(b & : & ArExpr & -;},{range:{start:{line:100,character:0},end:{line:101,character:0}},rangeLength:50,text:"}]} & obj
+Normalized path: block2/task8/main.flow
+did-change: An option 'did-change-json' must be a vaid Json-encoded LSP DidChangeTextDocimentParams
+Parsing 'block2/task8/main'
