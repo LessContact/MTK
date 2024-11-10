@@ -1,0 +1,715 @@
+import lingo/pegcode/driver;
+import string;
+import math/math;
+
+export {
+    ArExpr ::= ArSum, ArMult, ArSub, ArDiv, ArNeg, ArVar, ArRatNum;
+
+    ArSum(left : ArExpr, right : ArExpr);
+    ArMult(left : ArExpr, right : ArExpr);
+    ArSub(left : ArExpr, right : ArExpr);
+    ArDiv(left : ArExpr, right : ArExpr);
+
+    ArNeg(val : ArExpr);
+    ArVar(val : string);
+    // ArInt(val : int);
+    ArRatNum : (numerator : int, denominator : int);
+
+    ratNum : (numerator : int, denominator : int);
+
+    sumRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum>;
+    subRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum>;
+    multRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum>;
+    divRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum>;
+    ratNum2s(rat : Maybe<ratNum>) -> string;
+    calculate(e: ArExpr, vars : Tree<string, ratNum>) -> Maybe<ratNum>;
+    ar2s(e: ArExpr) -> string;
+    parser(str : string) -> ArExpr;
+
+    diff(e : ArExpr, var : ArVar) -> ArExpr;
+    simplify(e : ArExpr) -> ArExpr;
+
+
+
+    // collectMon(exp: ArExpr) -> [Mon];
+    // buildMon(root: ArExpr) -> Mon;
+    // passTreeForGetMon(exp: ArExpr, vars: ref Tree, coef: ref int);
+    // tree2s(tr: Tree<string, int>) -> string;
+    // pair2s(pair: Pair<string, int>) -> string;
+    // arr2tree(monomials: [Mon]) -> Tree<string, int>;
+    // mon2pair(mon: Mon) -> Pair<string, int>;
+    // restruct(exp: ArExpr) -> ArExpr;
+    // calcRat(exp: ArExpr) -> ArDiv;
+    // openBrackets(exp: ArDiv) -> ArDiv;
+    // simpArMult(left: ArExpr, right: ArExpr) -> ArExpr;
+    // handlePolinom(exp: ArExpr) -> ArExpr;
+    // isArIntAndEqual(ex: ArExpr, value: int) -> bool;
+    // calcResult(str: string) -> string;
+}
+
+    //Переменные + степень каждой,коэффициент монома.
+    // Mon(vars: Tree<string, int>, coef: ref int);
+
+sumRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum> { // a/b + c/d
+    if (isSome(left) && isSome(right)) {
+        val1 = either(left, ratNum(0, 0));
+        val2 = either(right, ratNum(0, 0));
+
+        nok = lcm(val1.denominator, val2.denominator);
+        // приведение к общему знаменателю
+        newNumerator = nok / val1.denominator * val1.numerator + nok / val2.denominator * val2.numerator;
+        newDenominator = nok;
+
+        // сокращение дроби
+        nod = iabs(gcd(newNumerator, newDenominator));
+        Some(ratNum(newNumerator / nod, newDenominator / nod));
+    } else {
+        None();
+    }
+}
+
+subRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum> { // a/b  - c/d
+    if (isSome(left) && isSome(right)) {
+        val1 = either(left, ratNum(0, 0));
+        val2 = either(right, ratNum(0, 0));
+
+        nok = lcm(val1.denominator, val2.denominator);
+        // приведение к общему знаменателю
+        newNumerator = nok / val1.denominator * val1.numerator - nok / val2.denominator * val2.numerator;
+        newDenominator = nok;
+
+        // сокращение дроби
+        nod = iabs(gcd(newNumerator, newDenominator));
+        Some(ratNum(newNumerator / nod, newDenominator / nod));
+    } else {
+        None();
+    }
+}
+
+multRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum> { // a/b * c/d
+    if (isSome(left) && isSome(right)) {
+        val1 = either(left, ratNum(0, 0));
+        val2 = either(right, ratNum(0, 0));
+
+        nodAD = iabs(gcd(val1.numerator, val2.denominator));
+        nodBC = iabs(gcd(val2.numerator, val1.denominator));
+        newNumerator = val1.numerator / nodAD * val2.numerator / nodBC;
+        newDenominator = val1.denominator / nodBC * val2.denominator / nodAD;
+
+        // сокращение дроби
+        nod = iabs(gcd(newNumerator, newDenominator));
+        Some(ratNum(newNumerator / nod, newDenominator / nod));
+    } else {
+        None();
+    }
+}
+
+divRatNum(left : Maybe<ratNum>, right : Maybe<ratNum>) -> Maybe<ratNum> { // a/b / c/d
+    if (isSome(left) && isSome(right)) {
+        val1 = either(left, ratNum(0, 0));
+        val2 = either(right, ratNum(0, 0));
+
+        nodAC = iabs(gcd(val1.numerator, val2.numerator));
+        nodBD = iabs(gcd(val1.denominator, val2.denominator));
+        newNumerator = val1.numerator / nodAC * val2.denominator / nodBD;
+        newDenominator = val1.denominator / nodBD * val2.numerator / nodAC;
+
+        if (newDenominator == 0) {
+            None();
+        } else { // сокращение дроби
+            nod = iabs(gcd(newNumerator, newDenominator));
+            Some(ratNum(newNumerator / nod, newDenominator / nod));
+        }
+    } else {
+        None();
+    }
+}
+
+ratNum2s(rat : Maybe<ratNum>) -> string {
+    newRat = either(rat, ratNum(0, 0));
+    if (newRat.denominator == 0) 
+        "ERROR (Division by zero)"
+    else if (newRat.denominator == 1)
+        i2s(newRat.numerator)
+    else if (newRat.denominator < 0){
+        newRat1 = (ratNum(-newRat.numerator, -newRat.denominator));
+        i2s(newRat1.numerator) + "/" + i2s(newRat1.denominator);
+    }
+    else i2s(newRat.numerator) + "/" + i2s(newRat.denominator);
+}
+
+calculate(e: ArExpr, vars : Tree<string, ratNum>) -> Maybe<ratNum> {
+    switch (e) {
+        ArSum(left, right): sumRatNum(calculate(left, vars), calculate(right, vars));
+        ArMult(left, right): multRatNum(calculate(left, vars), calculate(right, vars));
+        ArSub(left, right): subRatNum(calculate(left, vars), calculate(right, vars));
+        ArDiv(left, right): divRatNum(calculate(left, vars), calculate(right, vars));
+        ArNeg(val): multRatNum(Some(ratNum(-1,1)), calculate(val, vars));
+        ArVar(val): lookupTree(vars, val);
+        // ArInt(val): Some(ratNum(val, 1));
+        ArRatNum(n, d): Some(ratNum(n, d));
+    }
+}
+
+ar2s(e: ArExpr) -> string {
+    switch (e) {
+        ArSum(left, right): "(" + ar2s(left) + "+" + ar2s(right) + ")";
+        ArMult(left, right): "(" + ar2s(left) + "*" + ar2s(right) + ")";
+        ArSub(left, right): "(" + ar2s(left) + "-" + ar2s(right) + ")";
+        ArDiv(left, right): "(" + ar2s(left) + "/" + ar2s(right) + ")";
+        ArNeg(val): "(-" + ar2s(val) + ")";
+        ArVar(val): val;
+        // ArInt(val): i2s(val);
+        ArRatNum(n,d) :{
+            if (d == 1) {
+                i2s(n);
+            }
+            else if (n == 0 && d != 0){
+                i2s(0);
+            }
+            else if (d == 0) {
+                "Error! Division by zero!";
+            }
+            else {
+                i2s(n) + "/" + i2s(d);
+            }
+        }
+    }
+}
+
+
+diff(e : ArExpr, var : ArVar) -> ArExpr {
+    switch(e) {
+        ArMult(left, right) : ArSum(ArMult(diff(left, var), right), ArMult(left, diff(right, var)));
+        ArSum(left, right) : ArSum(diff(left, var), diff(right, var));
+        ArDiv(left, right) : ArDiv(ArSub(ArMult(diff(left, var), right), ArMult(left, diff(right, var))), ArMult(right, right));
+        ArSub(left, right) : ArSub(diff(left, var), diff(right, var));
+        ArNeg(val) : ArNeg(diff(val, var));
+        // ArInt(val) : ArInt(0);
+        // ArVar(val) : {
+        //     if (val == var.val)
+        //         ArInt(1)
+        //     else
+        //         ArVar(val);
+        // }
+        ArRatNum(n,d) : ArRatNum(0, 1);
+        ArVar(val) : {
+            if (val == var.val)
+                ArRatNum(1, 1)
+            else
+                ArRatNum(0, 1);
+        }
+    }
+}
+
+maybe2val(m : Maybe<ratNum>) -> ratNum {
+    switch (m) {
+        Some(v): v;
+        None(): ratNum(0, 0);
+    }
+}
+
+getRatNum(e : ArExpr) -> ratNum {
+    switch(e) {
+        ArSum(lhs, rhs): ratNum(0, 0);
+        ArSub(lhs, rhs): ratNum(0, 0);
+        ArMult(lhs, rhs): ratNum(0, 0);
+        ArDiv(lhs, rhs): ratNum(0, 0);
+        ArNeg(val): ratNum(0, 0);
+        ArRatNum(n, d): ratNum(n, d);
+        ArVar(val): ratNum(0, 0);
+
+    }
+}
+
+simplify(e : ArExpr) -> ArExpr {
+    switch(e) {
+        ArVar(val): ArVar(val);
+        ArRatNum(n, d): ArRatNum(n, d);
+        ArSum(lhs, rhs): {
+            l = simplify(lhs);
+            r = simplify(rhs);
+
+            if (l == ArRatNum(0, 1)) {
+                r;
+            }
+            else 
+            if (r == ArRatNum(0, 1)) {
+                l;
+            }
+            else {
+                if (l.structname == "ArRatNum" && r.structname == "ArRatNum") {
+                    sum = maybe2val(sumRatNum(Some(getRatNum(l)), Some(getRatNum(r))));
+                    ArRatNum(sum.numerator, sum.denominator);
+                }
+                else {
+                   ArSum(l, r); 
+                }
+            }
+        }
+        ArSub(lhs, rhs): {
+            l = simplify(lhs);
+            r = simplify(rhs);
+
+            if(r == ArRatNum(0,1)) {
+                l;
+            }
+            else if(l == ArRatNum(0,1)) {
+                ArNeg(r);
+            }
+            else if(l == r) {
+                ArRatNum(0, 1);
+            }
+            else{
+                if (l.structname == "ArRatNum" && r.structname == "ArRatNum") {
+                    minus = maybe2val(sumRatNum(Some(getRatNum(l)), Some(ratNum(0 - getRatNum(r).numerator, getRatNum(r).denominator))));
+                    ArRatNum(minus.numerator, minus.denominator);
+                }
+                else {
+                   ArSub(l, r); 
+                }
+            }
+        }
+        ArMult(lhs, rhs):{
+            l = simplify(lhs);
+            r = simplify(rhs);
+
+            if (r == ArRatNum(-1,1)) {
+                ArNeg(l);
+            }
+            else if (l == ArRatNum(-1,1)) {
+                ArNeg(r);
+            }
+            else if (r == ArRatNum(0,1)) {
+                ArRatNum(0,1);
+            }
+            else if (l == ArRatNum(0,1)) {
+                ArRatNum(0,1);
+            }
+            else if (r == ArRatNum(1,1)) {
+                l;
+            }
+            else if (l == ArRatNum(1,1)) {
+                r;
+            }
+            else {
+                if (l.structname == "ArRatNum" && r.structname == "ArRatNum") {
+                    mult = maybe2val(multRatNum(Some(getRatNum(l)), Some(getRatNum(r))));
+                    ArRatNum(mult.numerator, mult.denominator);
+                }
+                else {
+                    ArMult(l, r);
+                }
+            }
+        }
+        ArDiv(lhs, rhs): {
+            l = simplify(lhs);
+            r = simplify(rhs);
+
+            if (r == ArRatNum(1,1)) {
+                l;
+            }
+            else if (r == ArRatNum(0,1)) {
+                ArRatNum(0,0);
+            }
+            else if (l == ArRatNum(0,1) && r != ArRatNum(0,1)) {
+                ArRatNum(0,1);
+            }
+            else {
+                if (l.structname == "ArRatNum" && r.structname == "ArRatNum") {
+                    div = maybe2val(multRatNum(Some(getRatNum(l)), Some(ratNum(getRatNum(r).denominator, getRatNum(r).numerator))));
+                    ArRatNum(div.numerator, div.denominator);
+                }
+                else {
+                    ArDiv(l, r);
+                }
+            }
+        }
+        ArNeg(val): {
+            newVal = simplify(val);
+            switch(newVal) {
+                ArNeg(v): v;
+                ArRatNum(n, d): ArRatNum(0 - n, d);
+                default: ArNeg(newVal);
+            }
+        }
+    }
+}
+//     switch(e) {
+//         ArMult(left, right) : {
+//             a = simplify(left);
+//             b = simplify(right);
+
+//             if (a == ArInt(0) || b == ArInt(0)) 
+//                 ArInt(0)
+//             else if (a == ArInt(1))
+//                 b
+//             else if (b == ArInt(1))
+//                 a
+//             else if (a.structname == "ArInt" && b.structname == "ArMult") {
+//                 Int = cast(a : ArExpr -> ArInt);
+//                 Mult = cast(b : ArExpr -> ArMult);
+//                 if (Mult.left.structname == "ArInt") { //a*(b*c)
+//                     Int2 = cast(Mult.left : ArExpr -> ArInt); //b
+//                     simplify(ArMult(ArInt(Int.val * Int2.val), Mult.right)); //(a*b)*c
+//                 } else if (Mult.right.structname == "ArInt") {
+//                     Int2 = cast(Mult.right : ArExpr -> ArInt); //c
+//                     simplify(ArMult(ArInt(Int.val * Int2.val), Mult.left)); //(a*c)*b
+//                 } else {
+//                     ArMult(a, b);
+//                 }
+//             }
+//             else if (a.structname == "ArMult" && b.structname == "ArInt") {
+//                 simplify(ArMult(b, a));
+//             } else if (a.structname == "ArInt" && b.structname == "ArInt") {
+//                 Int1 = cast(a : ArExpr -> ArInt);
+//                 Int2 = cast(b : ArExpr -> ArInt);
+//                 ArInt(Int1.val * Int2.val);
+//             } else {
+//                 ArMult(a, b);
+//             }
+//         }
+//         ArSum(left, right) : {
+//             a = simplify(left);
+//             b = simplify(right);
+
+//             if (a == ArInt(0))
+//                 b
+//             else if (b == ArInt(0))
+//                 a
+//             else if (a == b) {
+//                 simplify(ArMult(ArInt(2), a));
+//             } else if (a.structname == "ArInt" && b.structname == "ArInt") {
+//                 Int1 = cast(a : ArExpr -> ArInt);
+//                 Int2 = cast(b : ArExpr -> ArInt);
+//                 ArInt(Int1.val + Int2.val);
+//             }
+//             else if (a.structname == "ArInt" && b.structname == "ArSum") {
+//                 Int = cast(a : ArExpr -> ArInt);
+//                 Sum = cast(b : ArExpr -> ArSum);
+//                 if (Sum.left.structname == "ArInt") {
+//                     Int2 = cast(Sum.left : ArExpr -> ArInt);
+//                     simplify(ArSum(ArInt(Int.val + Int2.val), Sum.right));
+//                 } else if (Sum.right.structname == "ArInt") {
+//                     Int2 = cast(Sum.right : ArExpr -> ArInt);
+//                     simplify(ArSum(ArInt(Int.val + Int2.val), Sum.left));
+//                 } else {
+//                     ArSum(a, b);
+//                 }
+//             } else if (a.structname == "ArSum" && b.structname == "ArInt") {
+//                 simplify(ArSum(b, a));
+//             } else if (a.structname == "ArSub" && b.structname == "ArInt") {
+//                 Sub = cast(a : ArExpr -> ArSub);
+//                 Int = cast(b : ArExpr -> ArInt);
+//                 if (Sub.left.structname == "ArInt") { // (a-b)+c (a+(-b)+c)
+//                     Int2 = cast(Sub.left : ArExpr -> ArInt); // a == int
+//                     simplify(ArSub(ArInt(Int.val + Int2.val), Sub.right));//(a+c)-b
+//                 } else if (Sub.right.structname == "ArInt") {
+//                     Int2 = cast(Sub.right : ArExpr -> ArInt); //b == int
+//                     simplify(ArSum(ArInt(Int.val - Int2.val), Sub.left)); //(c-b)+a
+//                 } else {
+//                     ArSum(a, b);
+//                 }
+//             } else if (a.structname == "ArInt" && b.structname == "ArSub") {
+//                 simplify(ArSum(b, a));
+//             } else if (b.structname == "Neg") {
+//                 neg = cast(b : ArExpr -> ArNeg);
+//                 ArSub(a, neg.val);
+//             } else {
+//                 ArSum(a, b);
+//             }
+//         }
+//         ArDiv(left, right) : {
+//             a = simplify(left);
+//             b = simplify(right);
+
+//             if (a == ArInt(0))
+//                 ArInt(0)
+//             else if (a == b)
+//                 ArInt(1)
+//             else if (a.structname == "ArInt" && b.structname == "ArInt") {
+//                 Int1 = cast(a : ArExpr -> ArInt);
+//                 Int2 = cast(b : ArExpr -> ArInt);
+//                 ArInt(Int1.val / Int2.val);
+//             } else {
+//                 ArDiv(a, b);
+//             }
+//         }
+//         ArNeg(val) : {
+//             if (val == ArInt(0))
+//                 val
+//             else
+//                 ArNeg(simplify(val));
+//         }
+//         ArSub(left, right) : simplify(ArSum(left, ArNeg(right)));
+//         ArInt(val) : ArInt(val);
+//         ArVar(val) : ArVar(val);
+//     }
+// }
+
+parser(str : string) -> ArExpr {
+    e_gr = "#include arith.lingo";
+    parsic(
+        compilePegGrammar(e_gr),
+        str,
+        defaultPegActions
+    );
+}
+
+// //нужно собрать массив мономов, элемент - слагаемое
+// collectMon(exp: ArExpr) -> [Mon] {
+//     switch (exp) {
+//         ArMult(left, right): concat([], [buildMon(ArMult(left, right))]);
+//         ArSum(left, right): concat(collectMon(left), collectMon(right));
+//         ArInt(val): concat([], [buildMon(ArInt(val))]);
+//         ArNeg(val): {
+//             arr = map(collectMon(val), \mon -> {
+//                 newCoef: ref int = mon.coef;
+//                 newCoef := ^(newCoef) * (-1);
+//                 Mon(mon.vars, newCoef);
+//             });
+//             concat([], arr);
+//         };
+//         ArVar(val): concat([], [buildMon(ArVar(val))]);
+//         default: [];
+//     }
+// }
+
+// //передаем сюда поддерево с умножением - моном, который еще в рекурсивном виде
+// buildMon(root: ArExpr) -> Mon {
+//     switch(root) {
+//         ArVar(name): {
+//             empty_tree = makeTree();
+//             tree = setTree(empty_tree, name, 1);
+//             Mon(tree, ref 1);
+//         }
+//         ArInt(val): {
+//             Mon(makeTree(), ref val);
+//         }
+//         ArNeg(val): {
+//             vars: ref Tree = ref makeTree();
+//             coef: ref int = ref 1;
+//             passTreeForGetMon(ArNeg(val), vars, coef);
+//             Mon(^vars, coef);
+//         }
+//         ArMult(left, right): {
+//             vars: ref Tree = ref makeTree();
+//             coef: ref int = ref 1;
+//             passTreeForGetMon(ArMult(left, right), vars, coef);
+//             Mon(^vars, coef);
+//         }
+//         default: Mon(makeTree(), ref 0);    
+//     } 
+// }
+
+// // Cобираем степени в произведении переменных, вносим знак в коэфф., собираем сам коэфф.
+// passTreeForGetMon(exp: ArExpr, vars: ref Tree, coef: ref int) {
+//     switch(exp) {
+//         ArMult(left, right): {
+//             passTreeForGetMon(left, vars, coef);
+//             passTreeForGetMon(right, vars, coef);
+//         }
+//         ArNeg(val): {
+//             coef := ^coef * (-1);
+//             passTreeForGetMon(val, vars, coef);
+//         }
+//         ArInt(val): coef := ^coef * val;
+//         ArVar(name): vars := setTree(^vars, name, lookupTreeDef(^vars, name, 0) + 1);
+
+//         default: {}
+//     }
+// }
+
+// tree2s(tr: Tree<string, int>) -> string {
+//     pairs = tree2pairs(tr);
+//     fold(pairs, "", \res, pair -> {
+//         if (pair.second == 0) {
+//             res;
+//         } else if (strIndexOf(pair2s(pair), "-") == -1) {
+//             res + "+" + pair2s(pair);
+//         } else {
+//            res + pair2s(pair);
+//         }
+//     });
+// }
+
+// pair2s(pair: Pair<string, int>) -> string {
+//     if (pair.second == 1) {
+//         if (pair.first != "") {
+//             pair.first;
+//         } else {
+//             i2s(pair.second);
+//         }
+//     } else if (pair.second == 0) {
+//         "0";
+//     } else {
+//         i2s(pair.second) + pair.first;
+//     }
+// }
+
+// arr2tree(monomials: [Mon]) -> Tree<string, int> {
+//     // Дерево(моном, коэфф) -> массив пар(моном, коэфф) но моном уже вида x^3y^42
+//     monomialsPair = map(monomials, \m -> mon2pair(m));
+
+//     // добавляем первую пару (моном, коэф) в дерево, чтобы потом сравнивать с ним
+//     // Если какие-то мономы совпадают, то складываем их, иначе добавляем новую ноду в дерево
+//     tree : ref Tree<string, int> = ref setTree(makeTree(), monomialsPair[0].first, monomialsPair[0].second);
+//     // упрощение штук вида 5a + 5a 
+//     map(tail(monomialsPair), \m -> {
+//         tree := setTree(^tree, m.first, lookupTreeDef(^tree, m.first, 0) + m.second);
+//     });
+
+//     ^tree;
+// }
+
+
+// mon2pair(mon: Mon) -> Pair<string, int> {
+//     sorted_mon_pair_arr = mergeSort(tree2pairs(mon.vars), \a, b -> { if (a.first > b.first) {1} else if (a < b) {-1} else {0}; });
+//     k = fold(sorted_mon_pair_arr, "", \key, p -> {
+//         if (p.second == 1) {
+//             key + p.first;
+//         } else {
+//             key + p.first + "^" + i2s(p.second);
+//         }
+//     });
+
+//     Pair(k, ^(mon.coef));
+// }
+
+// //меняем ArSub на ArSum(left, ArNeg(right)); всюду
+// restruct(exp: ArExpr) -> ArExpr {
+//     switch(exp) {
+//         ArMult(left, right): ArMult(restruct(left), restruct(right));
+//         ArSum(left, right): ArSum(restruct(left), restruct(right));
+//         ArSub(left, right): ArSum(restruct(left), ArNeg(restruct(right)));
+//         ArInt(val): ArInt(val);
+//         ArNeg(val): ArNeg(restruct(val));
+//         ArVar(name): ArVar(name);
+
+//         default: ArInt(0);
+//     }
+// }
+
+// calcRat(exp: ArExpr) -> ArDiv {
+//     switch(exp) {
+//         ArSum(left, right): {
+//             ArDiv(ArSum(ArMult(calcRat(left).left, 
+//                                 calcRat(right).right), 
+//                   simpArMult(calcRat(right).left, 
+//                             calcRat(left).right)), 
+//             simpArMult(calcRat(left).right, 
+//                         calcRat(right).right));
+//         }
+//         ArMult(left, right): {
+//             ArDiv(simpArMult(calcRat(left).left, 
+//                             calcRat(right).left), 
+//                 simpArMult(calcRat(left).right, 
+//                             calcRat(right).right));
+//         }
+//         ArSub(left, right): {
+//             ArDiv(ArSub(simpArMult(calcRat(left).left, 
+//                                     calcRat(right).right), 
+//                   simpArMult(calcRat(right).left,
+//                             calcRat(left).right)), 
+//             simpArMult(calcRat(left).right, 
+//                         calcRat(right).right));
+//         }
+//         ArDiv(left, right): {
+//             ArDiv(simpArMult(calcRat(left).left, 
+//                             calcRat(right).right), 
+//             simpArMult(calcRat(left).right, 
+//                         calcRat(right).left));
+//         }
+//         ArNeg(val): {
+//             ArDiv(ArNeg(calcRat(val).left), calcRat(val).right);
+//         }
+//         ArInt(val): ArDiv(ArInt(val), ArInt(1));
+//         ArVar(name): ArDiv(ArVar(name), ArInt(1));
+//     }
+// }
+
+// openBrackets(exp: ArDiv) -> ArDiv {
+//     expNum = exp.left;
+//     expDenom = exp.right;
+    
+//     ArDiv(handlePolinom(expNum), handlePolinom(expDenom)); 
+// }
+
+// // Преобразования вида *0 или *1
+// simpArMult(left: ArExpr, right: ArExpr) -> ArExpr {
+//     if ((left.structname == "ArInt" && cast(left: ArExpr -> ArInt).val == 0) || (right.structname == "ArInt" && cast(right: ArExpr -> ArInt).val == 0)) {
+//         ArInt(0);
+//     } else if (isArIntAndEqual(left, 1)) {
+//         right;
+//     } else if (isArIntAndEqual(right, 1)) {
+//         left;
+//     } else {
+//         ArMult(left, right);
+//     }       
+// }
+
+
+// //проходимся по всему полиному и преобразовываем умножения
+// handlePolinom(exp: ArExpr) -> ArExpr {
+//     switch(exp) {
+//         ArMult(left, right): {
+//             if (left.structname == "ArSub") {
+//                 lexp = cast(left: ArExpr -> ArSub);
+//                 handlePolinom(ArSub(simpArMult(handlePolinom(lexp.left), 
+//                                                handlePolinom(right)), 
+//                               simpArMult(handlePolinom(lexp.right), 
+//                                          handlePolinom(right))));
+//             } else if (right.structname == "ArSub") {
+//                 rexp = cast(right: ArExpr -> ArSub);
+//                 handlePolinom(ArSub(simpArMult(handlePolinom(rexp.left),
+//                                                handlePolinom(left)), 
+//                               simpArMult(handlePolinom(rexp.right),
+//                                                handlePolinom(left))));
+//             } else if (left.structname == "ArSum") {
+//                 lexp = cast(left: ArExpr -> ArSum);
+//                 handlePolinom(ArSum(simpArMult(handlePolinom(lexp.left),
+//                                                handlePolinom(right)),
+//                               simpArMult(handlePolinom(lexp.right),
+//                                          handlePolinom(right))));
+//             } else if (right.structname == "ArSum") {
+//                 rexp = cast(right: ArExpr -> ArSum);
+//                 handlePolinom(ArSum(simpArMult(handlePolinom(rexp.left), 
+//                                                handlePolinom(left)), 
+//                               simpArMult(handlePolinom(rexp.right),
+//                                          handlePolinom(left))));
+//             } else {
+//                 simpArMult(handlePolinom(left), handlePolinom(right));
+//             }
+//         }
+//         ArSum(left, right): ArSum(handlePolinom(left), handlePolinom(right));
+//         ArSub(left, right): ArSub(handlePolinom(left), handlePolinom(right));
+//         ArDiv(left, right): ArDiv(handlePolinom(left), handlePolinom(right));
+//         ArNeg(val): ArNeg(handlePolinom(val));
+//         ArInt(val): ArInt(val);
+//         ArVar(name): ArVar(name);
+//     }
+// }
+
+// isArIntAndEqual(ex: ArExpr, value: int) -> bool {
+//     if (ex.structname == "ArInt") {
+//         cast(ex: ArExpr -> ArInt).val == value;
+//     } else {
+//         false;
+//     }
+// }
+
+
+// calcResult(str: string) -> string {
+//     ratOpenedBrackets = openBrackets(openBrackets(calcRat(parser(str))));
+//     num = restruct(ratOpenedBrackets.left);
+//     denom = restruct(ratOpenedBrackets.right);
+
+//     monomialsArr1 = collectMon(num);
+//     monomialsArr2 = collectMon(denom);
+
+//     numPol = tree2s(arr2tree(monomialsArr1));
+//     denomPol = tree2s(arr2tree(monomialsArr2));
+
+//     result = "(" + numPol + ")" + "/" + "(" + denomPol + ")";
+//     result;
+// }

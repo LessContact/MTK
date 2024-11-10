@@ -17,7 +17,7 @@ diff(e : ArExpr, var : ArVar) -> ArExpr {
             if (val == var.val)
                 ArInt(1)
             else
-                ArVar(val);
+                ArInt(0);
         }
     }
 }
