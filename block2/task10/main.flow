@@ -2,39 +2,39 @@ import old;
 
 identity(from: ArExpr, to: ArExpr);
 
-makeIdentitiesTree(identities: [identity]) -> Tree<ArExpr, ArExpr> {
+makeReplacementsTree(identities: [identity]) -> Tree<ArExpr, ArExpr> {
     fold(identities, makeTree(), \acc, ident -> {
         setTree(acc, ident.from, ident.to)
         });
 }
 
-findIdentities(expr: ArExpr, identitiesTree : Tree<ArExpr, ArExpr>) -> ArExpr {
+findReplacements(expr: ArExpr, identitiesTree : Tree<ArExpr, ArExpr>) -> ArExpr {
     result = switch(either(lookupTree(identitiesTree, expr), expr)) {
-        ArSum(left, right): ArSum(findIdentities(left, identitiesTree), findIdentities(right, identitiesTree));
-        ArSub(left, right): ArSub(findIdentities(left, identitiesTree), findIdentities(right, identitiesTree));
-        ArMult(left, right): ArMult(findIdentities(left, identitiesTree), findIdentities(right, identitiesTree));
-        ArDiv(left, right): ArDiv(findIdentities(left, identitiesTree), findIdentities(right, identitiesTree));
-        ArNeg(val): ArNeg(findIdentities(val, identitiesTree));
+        ArSum(left, right): ArSum(findReplacements(left, identitiesTree), findReplacements(right, identitiesTree));
+        ArSub(left, right): ArSub(findReplacements(left, identitiesTree), findReplacements(right, identitiesTree));
+        ArMult(left, right): ArMult(findReplacements(left, identitiesTree), findReplacements(right, identitiesTree));
+        ArDiv(left, right): ArDiv(findReplacements(left, identitiesTree), findReplacements(right, identitiesTree));
+        ArNeg(val): ArNeg(findReplacements(val, identitiesTree));
         ArRatNum(n, d): either(lookupTree(identitiesTree, expr), ArRatNum(n, d));
         ArVar(val): either(lookupTree(identitiesTree, expr), ArVar(val));
     }
 
     foldTree(identitiesTree, result, \ident, value, acc -> {
         isMatch = findTemplates(ident, acc, makeTree());
-        isMatch ?? resolveVars(value, isMatch) : acc;
+        isMatch ?? resolveVariables(value, isMatch) : acc;
     });
 }
 
-resolveVars(expr : ArExpr, varResolve : Tree<ArVar, ArExpr>) -> ArExpr {
+resolveVariables(expr : ArExpr, varResolve : Tree<ArVar, ArExpr>) -> ArExpr {
     switch(expr) {
-        ArSum(left, right): ArSum(resolveVars(left, varResolve), resolveVars(right, varResolve));
-        ArSub(left, right): ArSub(resolveVars(left, varResolve), resolveVars(right, varResolve));
-        ArDiv(left, right): ArDiv(resolveVars(left, varResolve), resolveVars(right, varResolve));
-        ArMult(left, right): ArMult(resolveVars(left, varResolve), resolveVars(right, varResolve));
+        ArSum(left, right): ArSum(resolveVariables(left, varResolve), resolveVariables(right, varResolve));
+        ArSub(left, right): ArSub(resolveVariables(left, varResolve), resolveVariables(right, varResolve));
+        ArDiv(left, right): ArDiv(resolveVariables(left, varResolve), resolveVariables(right, varResolve));
+        ArMult(left, right): ArMult(resolveVariables(left, varResolve), resolveVariables(right, varResolve));
         ArRatNum(n,d): expr;
         ArVar(val): either(lookupTree(varResolve, expr), expr);
         ArNeg(val): {
-            var = resolveVars(val, varResolve);
+            var = resolveVariables(val, varResolve);
             switch(var) {
                 ArRatNum(n,d): ArNeg(var);
                 ArVar(v): ArNeg(var);
@@ -126,7 +126,7 @@ main() {
     expr = parser(str);
     println(expr);
     
-    identExpr = findIdentities(expr, makeIdentitiesTree(idenitities));
+    identExpr = findReplacements(expr, makeReplacementsTree(idenitities));
 
     println("\nResult: " + ar2s(identExpr));
     quit(0);
