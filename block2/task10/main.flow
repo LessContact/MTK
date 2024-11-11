@@ -118,13 +118,17 @@ findTemplates(templ : ArExpr, expr : ArExpr, identitiesTree : Tree<ArVar, ArExpr
 main() {
     idenitities = [
         identity(parser("((x * x) - (y * y))"), parser("((x + y) * (x - y))")),
-        identity(parser("(x / x)"), parser("1"))
+        identity(parser("(x / x)"), parser("1")),
+        identity(parser("(x - x)"), parser("0"))
     ];
 
-    str = "(((x * x) - (y * y)) / ((x * x) - (y * y)))";
+    // str = "(((x * x) - (y * y)) / ((x * x) - (y * y)))";
+    str = "((a+b)/(a+b))";
+    // str = "((a * a) - (b * b))";
 
     println("STR: " + str);
     expr = parser(str);
+    println(expr);
     
     identExpr = findIdentities(expr, makeIdentitiesTree(idenitities));
 
