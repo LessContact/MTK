@@ -143,7 +143,7 @@ restruct(exp: ArExpr) -> ArExpr {
 
 calcRat(exp: ArExpr) -> ArDiv {
     switch(exp) {
-        ArSum(left, right): {
+        ArSum(left, right): {                           //a/b + c/d == (ad+bc)/bd
             ArDiv(ArSum(ArMult(calcRat(left).left, 
                                 calcRat(right).right), 
                   simpArMult(calcRat(right).left, 
@@ -266,7 +266,10 @@ calcResult(str: string) -> string {
 }
 
 main() {
-    str = "(((4 * (a * a)) - 9) * ((1 / ((2 * a) - 3)) - (1 / ((2 * a) + 3))))";
+    // str = "((((a + 1) / (7 * c)) * ((7 + (6 * c)) / x)) / ((3 * (a + 1)) / (x * x)))";
+    str = "((((x - 6) / (6 * y)) / (((x * x) - (y * y)) / y)) * (((x * x) + ((2 * (x * y)) + (y * y))) / x))";
+    // str = "((((9 * (x * x)) - 4) / ((3 * x) + 2)) - (3 * x))";
+    // str = "(((4 * (a * a)) - 9) * ((1 / ((2 * a) - 3)) - (1 / ((2 * a) + 3))))";
 
     println(str);
 
