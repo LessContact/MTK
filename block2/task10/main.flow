@@ -105,7 +105,7 @@ findTemplates(templ : ArExpr, expr : ArExpr, identitiesTree : Tree<ArVar, ArExpr
                 default: None();
             }
         }
-  }
+    }
 }
 
 main() {
