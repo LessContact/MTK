@@ -1,0 +1,15 @@
+VAR x : INT;
+VAR arr : INT ARRAY OF INT;
+VAR complex_arr : INT ARRAY OF ARRAY OF INT;
+{
+    x := 5;
+    arr := [0, 666, 1984];
+
+    arr := UPD(arr, 2, 993);
+
+    x := APP(arr, 2);
+
+    x := (x - 1);
+
+    complex_arr := [[1, 2], [3, 4]];
+}
