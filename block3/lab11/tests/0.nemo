@@ -1,8 +1,8 @@
 VAR x : INT;
-VAR arr : [INT];
+VAR arr : INT ARRAY OF INT;
 {   
-    x := 666;
+    x := arr;
     arr := [1, 2, 4, 8, 16, 32];
 
-    x := x * 1 / x;
+    x := ((x * 1) / x);
 }

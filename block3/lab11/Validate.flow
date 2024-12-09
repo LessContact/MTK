@@ -40,8 +40,8 @@ getTermType(typeMap : Tree<string, Type>, term : nemoTerm) -> Type {
 		// Var(e1) : {println("lookup");test=either(lookupTree(typeMap, e1), UnknownType());println(test);test}
         Var(e1) : {
             // println("lookup");
-            test = either(lookupTree(typeMap, e1), UnknownType());
-            tets2 = switch(test) {
+            test3 = either(lookupTree(typeMap, e1), UnknownType());
+            tets2 = switch(test3) {
                 ArrayType(m) : m;
                 IntType() : IntType();
                 default : UnknownType();
@@ -132,25 +132,25 @@ isTypesIncorrect(typeMap : Tree<string, Type>, body : Body) -> bool {
     // println("\n" + toString(body));
 	switch (body) {
 		Assignment(v, t) : switch(lookupTree(typeMap, v.e1)) {
-                Some(valType): {
-                // Check the type of the assigned expression
-                // println(t);
-                    exprType = getTermType(typeMap, t);
-                    // println("\n");
-                    // println("before");
-                    // println(exprType);
-                    // println(valType);
-                    // println("after");
-                    // println(lookupTree(typeMap, v.e1));
-                    (exprType == UnknownType() || (exprType != UnknownType() && exprType != valType));
-                }
-                None():{
-                /*   println("\n");
-                    println("none");*/
-                    true; // Variable is not declared
-                } 
-                    // Some(val) : false;
-                    // None() : true;
+                // Some(valType): {
+                // // Check the type of the assigned expression
+                // // println(t);
+                //     exprType = getTermType(typeMap, t);
+                //     // println("\n");
+                //     // println("before");
+                //     // println(exprType);
+                //     // println(valType);
+                //     // println("after");
+                //     // println(lookupTree(typeMap, v.e1));
+                //     (exprType == UnknownType() || (exprType != UnknownType() && exprType != valType));
+                // }
+                // None():{
+                // /*   println("\n");
+                //     println("none");*/
+                //     true; // Variable is not declared
+                // } 
+                    Some(val) : false;
+                    None() : true;
 			}; 
 		Sequence(bs) : fold(bs, false, \res, b -> res || isTypesIncorrect(typeMap, b));
 		Test(cond) : isFormIncorrect(typeMap, cond);
@@ -242,9 +242,9 @@ CheckProg(nemoProg: NemoAst) -> CheckRes {
 	if (isContains2Decl(vars)) {
 		Error("Double declaration error");
 	} else if (isTypesIncorrect(typeMap, prog)) {
-		Error("Types mismatch OR var wasn't declared or initialized");
-	// } else if (incorrectAssignmentsTypes(typeMap, prog)) {
-	// 	Error("Types in assignment mismatch");
+		Error("Types mismatch OR var wasn't declared");
+	} else if (incorrectAssignmentsTypes(typeMap, prog)) {
+		Error("Types in assignment mismatch");
 	} else {
 		Success("Currectly!");
 	}

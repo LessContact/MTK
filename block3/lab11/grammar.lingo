@@ -2,9 +2,6 @@ prog = ws decl*:d ws body:b ws {BuildProg(:d, :b)};
 
 decl = ws "VAR" ws var:v ws ":" ws type:t ws ";" ws {Decl(:v, :t)};
 type = arrayType | int;
-// arrayType = ws "[" ws type:t ws "]" {ArrayType(:t)};
-// arrayType = ws "INT" ws "ARRAY OF" ws (_arrType:t | type:t) ws {ArrayType(:t)};
-// _arrType = ws "ARRAY OF" type;
 arrayType = ws "ARRAY OF" ws type:t {ArrayType(:t)} |
             ws "INT" ws "ARRAY OF" ws type:t {ArrayType(:t)};
 int = ws "INT" {IntType()};

@@ -4,8 +4,9 @@ import string;
 import dynamic;
 
 main() {
-    nemoProgText = getFileContent("tests/1.nemo");
-    // nemoProgText = getFileContent("tests/fib.nm");
+    // nemoProgText = getFileContent("tests/0.nemo");
+    nemoProgText = getFileContent("tests/fib.nm");
+	// nemoProgText = getFileContent("tests/test2.nm");
 	println(nemoProgText);
 	println("\n\n");
 

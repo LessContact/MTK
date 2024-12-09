@@ -8,7 +8,7 @@ VAR v : INT ARRAY OF INT;
 		x := (x - 1) 
 	};
 	(x < (x + 1)) ?;
-	x := (x + (2 * x))
+	x := (x + (2 * x));
 }
 
 

@@ -1,5 +1,5 @@
 VAR n : INT;
-VAR fib : [INT];
+VAR fib : INT ARRAY OF INT;
 VAR i : INT;
 {
 	fib := UPD(fib, 0, 1);
